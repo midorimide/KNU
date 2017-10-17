@@ -1,5 +1,6 @@
 #include <vector>
 #include <iostream>
+#include <algorithm>
 
 using namespace std;
 
@@ -87,29 +88,37 @@ vector<double> squareMethod(Matrix A, vector<double> b) {
 			S[i][j] = (A[i][j] - temp) / (d[i][i] * S[i][i]);
 		}
 	}
-	return multiply(inverse(S), multiply(inverse(multiply(transpose(S), d)), b));
+	vector<double> x = multiply(inverse(S), multiply(inverse(multiply(transpose(S), d)), b));
+	cout << "Square root method ? :" << endl;
+	for (double val : x) {
+		cout << val << ' ';
+	}
+	cout << endl;
+	return x;
 }
 
-vector<double> JacobiMethod(Matrix A, vector<double> b, double eps, vector<double> x)
-{
+vector<double> JacobiMethod(Matrix A, vector<double> b, double eps, vector<double> x) {
 	vector<double> temp_x(A.size());
-	double norm;
+	vector<double> dif(A.size());
+	int count = 0;
 	do {
+		temp_x = b;
 		for (size_t i = 0; i < A.size(); i++) {
-			temp_x[i] = b[i];
 			for (int j = 0; j < A.size(); j++) {
-				if (i != j)
+				if (i != j) {
 					temp_x[i] -= A[i][j] * x[j];
+				}
 			}
 			temp_x[i] /= A[i][i];
 		}
-		norm = abs(x[0] - temp_x[0]);
-		for (int h = 0; h < A.size(); h++) {
-			if (abs(x[h] - temp_x[h]) > norm)
-				norm = abs(x[h] - temp_x[h]);
-			x[h] = temp_x[h];
-		}
-	} while (norm > eps);
+		transform(x.begin(), x.end(), temp_x.begin(), dif.begin(), [](double v1, double v2) {return abs(v1 - v2); });
+		x = temp_x;
+	} while (*max_element(dif.begin(), dif.end()) > eps && ++count);
+	cout << "Jacobi method:" << endl << "Steps count: " << count << endl;
+	for (double val : x) {
+		cout << val << ' ';
+	}
+	cout << endl;
 	return x;
 }
 
@@ -122,22 +131,17 @@ int main() {
 	};
 	vector<double> b = { 1, -3, -2, -5 };
 
+	double eps;
+	cin >> eps;
+
 	if (A == transpose(A) && det(A) != 0) {
-		vector<double> x = squareMethod(A, b);
-		cout << "Square root method ? :" << endl;
-		for (double val : x) {
-			cout << val << ' ';
-		}
-		cout << endl;
+		squareMethod(A, b);
 	}
 
-	vector<double> x{ 0, 0, 0, 0 };
-	x = JacobiMethod(A, b, 0.0001, x);
-	cout << "Jacobi method:" << endl;
-	for (double val : x) {
-		cout << val << ' ';
-	}
 	cout << endl;
+
+	vector<double> x_0{ 0, 0, 0, 0 };
+	JacobiMethod(A, b, eps, x_0);	
 
 	system("pause");
 	return 0;
