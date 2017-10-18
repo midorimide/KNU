@@ -99,7 +99,7 @@ vector<double> squareMethod(Matrix A, vector<double> b) {
 
 vector<double> JacobiMethod(Matrix A, vector<double> b, double eps, vector<double> x) {
 	vector<double> temp_x(A.size());
-	vector<double> dif(A.size());
+	double max_dif;
 	int count = 0;
 	do {
 		temp_x = b;
@@ -111,9 +111,13 @@ vector<double> JacobiMethod(Matrix A, vector<double> b, double eps, vector<doubl
 			}
 			temp_x[i] /= A[i][i];
 		}
-		transform(x.begin(), x.end(), temp_x.begin(), dif.begin(), [](double v1, double v2) {return abs(v1 - v2); });
-		x = temp_x;
-	} while (*max_element(dif.begin(), dif.end()) > eps && ++count);
+		max_dif = abs(x[0] - temp_x[0]);
+		for (int h = 0; h < A.size(); h++) {
+			if (abs(x[h] - temp_x[h]) > max_dif)
+				max_dif = abs(x[h] - temp_x[h]);
+			x[h] = temp_x[h];
+		}
+	} while (max_dif > eps && ++count);
 	cout << "Jacobi method:" << endl << "Steps count: " << count << endl;
 	for (double val : x) {
 		cout << val << ' ';

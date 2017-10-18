@@ -1,19 +1,27 @@
 #include <iostream>
 #include <SFML\Graphics.hpp>
 
-const int x_size = 20;
-const int y_size = 20;
+const int x_size = 10;
+const int y_size = 50;
 
 double f(double x) {
 	return x * x + 4. * sin(x) - 1.;
 }
 
 double fRelax(double x, double c) {
-	return x - c * f(x);
+	return x + c * f(x);
 }
 
 double fNewton(double x) {
 	return x - f(x) / (2 * x + 4 * cos(x));
+}
+
+double derivF(double x) {
+	return 2 * x + 4 * cos(x);
+}
+
+double deriv2F(double x) {
+	return 2 - 4 * sin(x);
 }
 
 void printResult(double x, int counter) {
@@ -31,6 +39,8 @@ void findResultsWithRelax(double x0, double c, double eps) {
 		x_cur = fRelax(x_cur, c);
 		++counter;
 	}
+	//double q = ()
+	//int n = log(x_cur - x0) / (1 / )
 	printResult(x_cur, counter);
 }
 
@@ -102,26 +112,41 @@ void drawPlot(sf::RenderWindow *window) {
 }
 
 int main() {
-	double	eps;
-
-	std::cout << "Enter accuracy:" << std::endl;
-	std::cin >> eps;
-
-	std::cout << std::endl << "Relax method:" << std::endl;
-	findResultsWithRelax(-2, -0.2, eps);
-	findResultsWithRelax(1, 0.3, eps);
-
-	std::cout << std::endl << "Newton method:" << std::endl;
-	findResultsWithNewton(-2, eps);
-	findResultsWithNewton(1, eps);
-
-	std::cout << std::endl;
-	
+	// draw plot
 	sf::ContextSettings settings;
 	sf::RenderWindow *window = new sf::RenderWindow(sf::VideoMode(1366, 768), "Plot", sf::Style::Fullscreen, settings);
 	window->clear(sf::Color::White);
 	drawPlot(window);
 	window->display();
+
+	 // solve
+	double	eps, a, b, c, q, Max, Min;
+
+	std::cout << "Enter accuracy:" << std::endl;
+	std::cin >> eps;
+
+	while (true) {
+		std::cout << std::endl << "Relax method:" << std::endl;
+		std::cout << "Enter range:" << std::endl;
+		std::cin >> a >> b;
+		Max = std::max(abs(derivF(a)), abs(derivF(b)));
+		Min = std::min(abs(derivF(a)), abs(derivF(b)));
+		c = 2 / (Max + Min);
+		q = (Max - Min) / (Max + Min);
+		if (q < 1) {
+			findResultsWithRelax((a + b) / 2, c * (derivF((a + b) / 2) < 0 ? 1 : -1), eps);
+		} else {
+			std::cout << "Wrong range!" << std::endl;
+		}
+
+		std::cout << std::endl << "Newton method:" << std::endl;
+		std::cout << "Enter value:" << std::endl;
+		std::cin >> a;
+		findResultsWithNewton(a, eps);
+
+		std::cout << std::endl;
+	}
+
 	while (window->isOpen()) {
 		sf::Event event;
 		while (window->pollEvent(event)) {
@@ -130,6 +155,7 @@ int main() {
 			}
 		}
 	}
+
 	return 0;
 }
 
