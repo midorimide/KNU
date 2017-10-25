@@ -1,11 +1,12 @@
 #include <iostream>
+#include <numeric>
 #include <SFML\Graphics.hpp>
 
 const int x_size = 10;
 const int y_size = 50;
 
 double f(double x) {
-	return x * x + 4. * sin(x) - 1.;
+	return x * x + 4 * sin(x) - 1.;
 }
 
 double fRelax(double x, double c) {
@@ -25,7 +26,7 @@ double deriv2F(double x) {
 }
 
 void printResult(double x, int counter) {
-	std::cout << std::endl << "Result = " << x << std::endl;
+	std::cout << "Result = " << x << std::endl;
 	std::cout << "f(Result) = " << f(x) << std::endl;
 	std::cout << "Steps count = " << counter << std::endl;
 }
@@ -39,8 +40,6 @@ void findResultsWithRelax(double x0, double c, double eps) {
 		x_cur = fRelax(x_cur, c);
 		++counter;
 	}
-	//double q = ()
-	//int n = log(x_cur - x0) / (1 / )
 	printResult(x_cur, counter);
 }
 
@@ -53,6 +52,83 @@ void findResultsWithNewton(double x0, double eps) {
 		++counter;
 	}
 	printResult(x_cur, counter);
+}
+
+void relaxMethod(double eps) {
+	std::cout << std::endl << "Relax method:" << std::endl;
+	std::cout << "Enter range:" << std::endl;
+	double a, b;
+	std::cin >> a >> b;
+	if (a > b) {
+		std::swap(a, b);
+	}
+	if (f(a) * f(b) > 0) {
+		std::cout << "Wrong value!(no roots)" << std::endl;
+		return;
+	}
+	// find derivate f in range [a, b]
+	std::vector<double> derivs1(1000);
+	std::iota(derivs1.begin(), derivs1.end(), 0);
+	std::transform(derivs1.begin(), derivs1.end(), derivs1.begin(), [a, b](double x) {return abs(derivF((b - a) * x / 1000 + a)); });
+	// find Max = max in derivs, Min = min in derivs 
+	double Max = *std::max_element(derivs1.begin(), derivs1.end());
+	double Min = *std::min_element(derivs1.begin(), derivs1.end());
+	// optimal const
+	double c = 2 / (Max + Min);
+	double q = (Max - Min) / (Max + Min);
+	if (q < 1) {
+		std::cout << "q = " << q << std::endl;
+		std::cout << "Minimum expected n: " << round(log(((b - a) / 2) / eps) / log(1 / q)) + 1 << std::endl;
+		findResultsWithRelax((a + b) / 2, c * (derivF(a) > 0 && derivF(b) > 0 ? -1 : 1), eps);
+	} else {
+		std::cout << "Wrong range!" << std::endl;
+		return;
+	}
+}
+
+void NewtonMethod(double eps) {
+	std::cout << std::endl << "Newton method:" << std::endl;
+	std::cout << "Enter value:" << std::endl;
+	double x0;
+	int range = 1;
+	std::cin >> x0;
+	/*if (f(x0 - range) * f(x0 + range) > 0) {
+		std::cout << "Wrong value!(no roots)" << std::endl;
+		return;
+	}*/
+	// find first and second derivate f in range [a - 1, a + 1]
+	std::vector<double> derivs1(1000);
+	std::vector<double> derivs2(1000);
+	std::iota(derivs1.begin(), derivs1.end(), 0);
+	std::iota(derivs2.begin(), derivs2.end(), 0);
+	std::transform(derivs1.begin(), derivs1.end(), derivs1.begin(), [x0, range](double x) {return abs(derivF(2 * range * x / 1000 + (x0 - range))); });
+	std::transform(derivs2.begin(), derivs2.end(), derivs2.begin(), [x0, range](double x) {return abs(deriv2F(2 * range * x / 1000 + (x0 - range))); });
+	double Max = *std::max_element(derivs2.begin(), derivs2.end());
+	double Min = *std::min_element(derivs1.begin(), derivs1.end());
+	bool sign1 = derivs1[0] > 0, sign2 = derivs2[0] > 0;
+	for (size_t i = 0; i < derivs1.size(); ++i) {
+		if (sign1 != derivs1[i] > 0 || sign2 != derivs2[i] > 0) {
+			std::cout << "Wrong value! (sign not const)" << std::endl;
+			return;
+		}
+	}
+	/*if (derivF(x0 - range) * deriv2F(x0 - range) > 0) {
+		x0 = x0 + range;
+	} else {
+		x0 = x0 - range;
+	}*/
+	if (f(x0) * deriv2F(x0) < 0) {
+		std::cout << "Wrong value! (f * f'' < 0)" << std::endl;
+		return;
+	}
+	double q = Max * range / (2 * Min);
+	if (q < 1) {
+		std::cout << "Min expected n: " << round(log2(log(range / eps) / log(1 / q) + 1)) + 1 << std::endl;
+		findResultsWithNewton(x0, eps);
+	} else {
+		std::cout << "Wrong value! (q >= 1)" << std::endl;
+		return;
+	}
 }
 
 void drawGrid(sf::RenderWindow *window) {
@@ -75,7 +151,7 @@ void drawGrid(sf::RenderWindow *window) {
 	window->draw(line, 2, sf::Lines);
 
 	text.setFillColor(sf::Color::Green);
-	for (int i = -y_size; i <= y_size; i++) {
+	for (int i = -y_size; i <= y_size; i+=5) {
 		text.setString(std::to_string(i));
 		text.setPosition(sf::Vector2f(683, 760 - (i + y_size) * 760 / (y_size * 2)));
 		window->draw(text);
@@ -120,42 +196,16 @@ int main() {
 	window->display();
 
 	 // solve
-	double	eps, a, b, c, q, Max, Min;
+	double	eps;
 
 	std::cout << "Enter accuracy:" << std::endl;
 	std::cin >> eps;
 
 	while (true) {
-		std::cout << std::endl << "Relax method:" << std::endl;
-		std::cout << "Enter range:" << std::endl;
-		std::cin >> a >> b;
-		Max = std::max(abs(derivF(a)), abs(derivF(b)));
-		Min = std::min(abs(derivF(a)), abs(derivF(b)));
-		c = 2 / (Max + Min);
-		q = (Max - Min) / (Max + Min);
-		if (q < 1) {
-			findResultsWithRelax((a + b) / 2, c * (derivF((a + b) / 2) < 0 ? 1 : -1), eps);
-		} else {
-			std::cout << "Wrong range!" << std::endl;
-		}
-
-		std::cout << std::endl << "Newton method:" << std::endl;
-		std::cout << "Enter value:" << std::endl;
-		std::cin >> a;
-		findResultsWithNewton(a, eps);
-
+		relaxMethod(eps);
+		NewtonMethod(eps);
 		std::cout << std::endl;
 	}
-
-	while (window->isOpen()) {
-		sf::Event event;
-		while (window->pollEvent(event)) {
-			if (event.type == sf::Event::Closed) {
-				window->close();
-			}
-		}
-	}
-
 	return 0;
 }
 
