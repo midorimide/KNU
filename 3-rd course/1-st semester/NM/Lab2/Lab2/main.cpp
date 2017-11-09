@@ -6,6 +6,8 @@ using namespace std;
 
 typedef vector<vector<double>> Matrix;
 
+vector<double> squareMethod(Matrix A, vector<double> b, double &determinant);
+
 Matrix getMinor(Matrix matrix, int row, int col) {
 	matrix.erase(matrix.begin() + row);
 	for (auto &vec : matrix) {
@@ -32,6 +34,19 @@ Matrix transpose(Matrix matrix) {
 	return matrix;
 }
 
+Matrix inverse2(Matrix matrix) {
+	vector<double> e(matrix.size(), 0);
+	double det;
+	Matrix res(matrix.size());
+	for (int i = 0; i < matrix.size(); i++) {
+		e[i] = 1;
+		res[i].resize(matrix.size());
+		res[i] = squareMethod(matrix, e, det);
+		e[i] = 0;
+	}
+	return res;
+}
+
 Matrix inverse(Matrix matrix) {
 	Matrix inverse_matrix = matrix;
 	double determinant = det(matrix);
@@ -43,7 +58,7 @@ Matrix inverse(Matrix matrix) {
 	return inverse_matrix;
 }
 
-vector<double> multiply(Matrix matrix, vector<double> vec) {
+vector<double> operator*(Matrix matrix, vector<double> vec) {
 	vector<double> res(vec.size());
 	for (size_t i = 0; i < matrix.size(); ++i) {
 		for (size_t j = 0; j < matrix[i].size(); ++j) {
@@ -53,7 +68,7 @@ vector<double> multiply(Matrix matrix, vector<double> vec) {
 	return res;
 }
 
-Matrix multiply(Matrix m1, Matrix m2) {
+Matrix operator*(Matrix m1, Matrix m2) {
 	Matrix res(m1.size());
 	for (size_t i = 0; i < m1.size(); i++) {
 		res[i].resize(m2[0].size());
@@ -66,7 +81,21 @@ Matrix multiply(Matrix m1, Matrix m2) {
 	return res;
 }
 
-void squareMethod(Matrix A, vector<double> b, double &determinant) {
+double norm(Matrix m) {
+	double max = 0, temp = 0;
+	for (auto vec : m) {
+		temp = 0;
+		for (auto val : vec) {
+			temp += abs(val);
+		}
+		if (temp > max) {
+			max = temp;
+		}
+	}
+	return max;
+}
+
+vector<double> squareMethod(Matrix A, vector<double> b, double &determinant) {
 	if (A != transpose(A)) {
 		cout << "Matrix is not symetric!" << endl;
 	}
@@ -84,22 +113,17 @@ void squareMethod(Matrix A, vector<double> b, double &determinant) {
 		S[i][i] = sqrt(abs(q));
 		d[i].resize(A[i].size());
 		d[i][i] = q > 0 ? 1 : (q == 0 ? 0 : -1);
-		temp = 0;
 		for (int j = i + 1; j < A.size(); j++) {
+			temp = 0;
 			for (int k = 0; k < i; k++) {
 				temp += S[k][i] * d[k][k] * S[k][j];
 			}
 			S[i][j] = (A[i][j] - temp) / (d[i][i] * S[i][i]);
 		}
-		cout << "S[i][i] = " << S[i][i] << endl;
 		determinant *= d[i][i] * pow(S[i][i], 2);
 	}
-	vector<double> x = multiply(inverse(S), multiply(inverse(multiply(transpose(S), d)), b));
-	cout << "Square root method:" << endl;
-	for (double val : x) {
-		cout << val << ' ';
-	}
-	cout << endl << "Square det = " << determinant << ", normal det = " << det(A) << endl;
+	vector<double> x = inverse(S) * inverse(transpose(S) * d) * b;
+	return x;
 }
 
 void JacobiMethod(Matrix A, vector<double> b, double eps, vector<double> x) {
@@ -151,14 +175,27 @@ int main() {
 	};
 	vector<double> b = { 1, -3, -2, -5 };
 
-	double eps;
-	cin >> eps;
+	cout << "Cond(A) = " << norm(A) * norm(inverse2(A)) << endl;
+	Matrix E = inverse(A) * A;
+	for (auto vec : E) {
+		for (auto val : vec) {
+			cout << round(val) << ' ';
+		}
+		cout << endl;
+	}
 	double determinant;
-
-	squareMethod(A, b, determinant);
 
 	cout << endl;
 
+	cout << "Square root method:" << endl;
+	for (double val : squareMethod(A, b, determinant)) {
+		cout << val << ' ';
+	}
+	cout << endl << "Square det = " << determinant << endl;
+
+	cout << endl << "Enter eps for Jacobi method:" << endl;
+	double eps;
+	cin >> eps;
 	vector<double> x_0{ 0, 0, 0, 0 };
 	JacobiMethod(A, b, eps, x_0);	
 
