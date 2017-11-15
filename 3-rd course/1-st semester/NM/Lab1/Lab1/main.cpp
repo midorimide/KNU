@@ -172,16 +172,16 @@ void drawGrid(sf::RenderWindow *window) {
 	}
 }
 
-void drawPlot(sf::RenderWindow *window) {
+void drawPlot(sf::RenderWindow *window, double (*pf)(double), double step) {
 	drawGrid(window);
 	sf::Vertex line[2];
 	line[0].color = sf::Color::Blue;
 	line[1].color = sf::Color::Blue;
 	line[0].position.x = 0;
-	line[0].position.y = 760 - (f(-x_size) + y_size) * 760. / (y_size * 2);
-	for (double i = -x_size; i <= x_size; i += 0.001) {
+	line[0].position.y = 760 - (pf(-x_size) + y_size) * 760. / (y_size * 2);
+	for (double i = -x_size; i <= x_size; i += step) {
 		line[1].position.x = (i + x_size) * 1366. / (x_size * 2);
-		line[1].position.y = 760 - (f(i) + y_size) * 760. / (y_size * 2);
+		line[1].position.y = 760 - (pf(i) + y_size) * 760. / (y_size * 2);
 		window->draw(line, 2, sf::Lines);
 		line[0].position = line[1].position;
 	}
@@ -192,7 +192,7 @@ int main() {
 	sf::ContextSettings settings;
 	sf::RenderWindow *window = new sf::RenderWindow(sf::VideoMode(1366, 768), "Plot", sf::Style::Fullscreen, settings);
 	window->clear(sf::Color::White);
-	drawPlot(window);
+	drawPlot(window, f, 0.0001);
 	window->display();
 
 	 // solve
