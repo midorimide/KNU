@@ -61,29 +61,37 @@ ml::Matrix<double> inv(const ml::Matrix<double> &matrix) {
 }
 
 ml::Matrix<double> pinvG(const ml::Matrix<double> &matrix) {
-	ml::Matrix<double> temp(matrix), prev;
-	if (temp.getSize().first == 1) {
-		return temp.getTranspose() / ((temp * temp.getTranspose())[0][0]);
+	ml::Matrix<double> a = ml::Matrix<double>::Matrix(matrix.getRow(0));
+	ml::Matrix<double> A(a.getTranspose());
+	ml::Matrix<double> res;
+	if ((a.getTranspose() * a)[0][0] == 0) {
+		res = ml::Matrix<double>::Matrix(a.getCol(0));
 	} else {
-		ml::Matrix<double> a(temp.eraseRow(temp.getSize().first - 1));
-		prev = pinvG(temp);
-		ml::Matrix<double> E(ones(temp.getSize().second));
-		ml::Matrix<double> Z(E - prev * temp);
+		res = ml::Matrix<double>::Matrix((a / (a.getTranspose() * a)[0][0]).getCol(0));
+	}
+	for (int i = 1; i < matrix.getSize().first; ++i) {
+		a = ml::Matrix<double>::Matrix(matrix.getRow(i));
+		ml::Matrix<double> t1 = ones(A.getSize().second);
+		ml::Matrix<double> t2 = res * A;
+		ml::Matrix<double> t3 = t1 - t2;
+		ml::Matrix<double> Z(ones(A.getSize().second) - res * A);
 		ml::Matrix<double> Z_a(Z * a);
-		ml::Matrix<double> aT_p(a.getTranspose() * prev);
+		ml::Matrix<double> aT_r(a.getTranspose() * res);
 		double scalar = (a.getTranspose() * Z_a)[0][0];
+		A.addRow(a.getCol(0));
 		if (abs(scalar) > EPS) {
-			prev = prev - (Z_a * aT_p) / scalar;
-			prev.addCol(((Z_a) / scalar).getCol(0));
+			res = res - (Z_a * aT_r) / scalar;
+			res.addCol(((Z_a) / scalar).getCol(0));
 		} else {
-			ml::Matrix<double> R(prev * prev.getTranspose());
+			ml::Matrix<double> R(res * res.getTranspose());
 			ml::Matrix<double> R_a(R * a);
 			scalar = 1 + (a.getTranspose() * R_a)[0][0];
-			prev = prev - (R_a * aT_p) / scalar;
-			prev.addCol(((R_a) / scalar).getCol(0));
+			res = res - (R_a * aT_r) / scalar;
+			res.addCol(((R_a) / scalar).getCol(0));
 		}
-		return prev;
+		std::cout << "Round " << i << " complete" << std::endl;
 	}
+	return res;
 }
 
 ml::Matrix<double> pinvMP(const ml::Matrix<double> &matrix) {
@@ -94,6 +102,7 @@ ml::Matrix<double> pinvMP(const ml::Matrix<double> &matrix) {
 int main() {
 	BITMAPFILEHEADER bfh_x, bfh_y;
 	BITMAPINFOHEADER bih_x, bih_y;
+
 	FILE *x, *y, *e;
 	x = fopen("x.bmp", "r + b");
 	y = fopen("y.bmp", "r + b");
@@ -125,7 +134,7 @@ int main() {
 
 	A.addRow(vector<double>::vector(A.getSize().second, 1));
 
-	ml::Matrix<double> C(B * (pinvMP(A) * A));
+	ml::Matrix<double> C(B * (pinvG(A) * A));
 
 	fwrite(&bfh_y, sizeof(bfh_y), 1, e);
 	fwrite(&bih_y, sizeof(bih_y), 1, e);
