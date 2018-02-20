@@ -1,11 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace Lab1
@@ -32,40 +27,43 @@ namespace Lab1
             }
         }
 
-        private bool PointIn(PointF point)
+        private bool PointIn(Point point)
         {
+            if (points.Count < 3)
+                return false;
+
             if (Rotate(points[0], points[1], point) < 0 || Rotate(points[0], points[points.Count - 1], point) > 0)
                 return false;
 
             int l = 1, r = points.Count - 1;
             while (r - l > 1)
             {
-                int q = (l + r) / 2;
-                if (Rotate(points[0], points[q], point) < 0)
-                    r = q;
+                int m = (l + r) / 2;
+                if (Rotate(points[0], points[m], point) < 0)
+                    r = m;
                 else
-                    l = q;
+                    l = m;
             }
 
             return Rotate(points[l], points[r], point) > 0;
         }
 
-        private float Rotate(PointF A, PointF B, PointF C)
+        private int Rotate(Point A, Point B, Point C)
         {
             return (B.X - A.X) * (C.Y - B.Y) - (B.Y - A.Y) * (C.X - B.X);
         }
 
-        private float Distance(PointF A, PointF B, PointF C)
+        private float Distance(Point A, Point B, Point C)
         {
             return (float)(Math.Abs((B.Y - A.Y) * C.X - (B.X - A.X) * C.Y + B.X * A.Y - B.Y * A.X) / Math.Sqrt(Math.Pow(B.Y - A.Y, 2) + Math.Pow(B.X - A.X, 2)));
         }
 
-        private PointF FindMaxPoint(PointF A, PointF B, List<PointF> points)
+        private Point FindMaxPoint(Point A, Point B, List<Point> points)
         {
-            PointF MaxPoint = new PointF();
+            Point MaxPoint = new Point();
             float MaxDistance = 0;
 
-            foreach (PointF point in points)
+            foreach (Point point in points)
             {
                 float Temp = Distance(A, B, point);
                 if (Temp > MaxDistance)
@@ -78,16 +76,16 @@ namespace Lab1
             return MaxPoint;
         }
 
-        private List<PointF> QuickHull(PointF A, PointF B, List<PointF> points)
+        private List<Point> QuickHull(Point A, Point B, List<Point> points)
         {
-            PointF C = FindMaxPoint(A, B, points);
+            Point C = FindMaxPoint(A, B, points);
             points.Remove(C);
 
-            List<PointF> List1 = new List<PointF>();
-            List<PointF> List2 = new List<PointF>();
-            List<PointF> Result = new List<PointF>();
+            List<Point> List1 = new List<Point>();
+            List<Point> List2 = new List<Point>();
+            List<Point> Result = new List<Point>();
 
-            foreach (PointF point in points)
+            foreach (Point point in points)
                 if (Rotate(A, C, point) < 0)
                     List1.Add(point);
                 else if (Rotate(C, B, point) < 0)
@@ -107,13 +105,13 @@ namespace Lab1
             if (points.Count < 4)
                 return;
 
-            PointF A = points[0], B = points[0];
-            List<PointF> List1 = new List<PointF>();
-            List<PointF> List2 = new List<PointF>();
-            List<PointF> Result = new List<PointF>();
+            Point A = points[0], B = points[0];
+            List<Point> List1 = new List<Point>();
+            List<Point> List2 = new List<Point>();
+            List<Point> Result = new List<Point>();
 
-            foreach (PointF point in points)
-                if (point.X < A.X)
+            foreach (Point point in points)
+                if (point.X < A.X || (point.X == A.X && point.Y > A.Y))
                     A = point;
                 else if (point.X > B.X)
                     B = point;
@@ -121,7 +119,7 @@ namespace Lab1
             points.Remove(A);
             points.Remove(B);
 
-            foreach (PointF point in points)
+            foreach (Point point in points)
                 if (Rotate(A, B, point) < 0)
                     List1.Add(point);
                 else
@@ -150,14 +148,14 @@ namespace Lab1
             pictureBox1.Image = bmp;
         }
 
-        private void LeftButtonClicked(PointF point)
+        private void LeftButtonClicked(Point point)
         {
             points.Add(point);
             UpdatePoints();
             DrawScene();
         }
 
-        private void RightButtonClicked(PointF point)
+        private void RightButtonClicked(Point point)
         {
             MessageBox.Show(PointIn(point) ? "Всередині" : "Ззовні");
         }
@@ -172,6 +170,6 @@ namespace Lab1
             pictureBox1.Size = Size;
         }
 
-        private List<PointF> points = new List<PointF>();
+        private List<Point> points = new List<Point>();
     }
 }
