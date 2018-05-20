@@ -45,7 +45,16 @@ namespace Lab1
                     l = m;
             }
 
-            return Rotate(points[l], points[r], point) > 0;
+            int rotate = Rotate(points[l], points[r], point);
+
+            if (rotate > 0)
+            {
+                DrawScene();
+                DrawTriangle(points[l], points[r], points[0]);
+                DrawCheckedPoint(point);
+            }
+
+            return rotate > 0;
         }
 
         private int Rotate(Point A, Point B, Point C)
@@ -138,14 +147,22 @@ namespace Lab1
         private void DrawScene()
         {
             if (points.Count < 2)
-                return;
-
-            Bitmap bmp = new Bitmap(pictureBox1.Width, pictureBox1.Height);
-            Graphics g = Graphics.FromImage(bmp);
+                return;            
             g.Clear(Color.White);
             g.DrawLines(Pens.Black, points.ToArray());
             g.DrawLine(Pens.Black, points[points.Count - 1], points[0]);
             pictureBox1.Image = bmp;
+        }
+
+        private void DrawTriangle(Point A, Point B, Point C)
+        {
+            Point[] p = { A, B, C};
+            g.DrawPolygon(Pens.Red, p);
+        }
+
+        private void DrawCheckedPoint(Point A)
+        {
+            g.DrawEllipse(Pens.Purple, A.X - 3, A.Y - 3, 6, 6);
         }
 
         private void LeftButtonClicked(Point point)
@@ -168,8 +185,12 @@ namespace Lab1
         private void Form1_Load(object sender, EventArgs e)
         {
             pictureBox1.Size = Size;
+            bmp = new Bitmap(pictureBox1.Width, pictureBox1.Height);
+            g = Graphics.FromImage(bmp);
         }
 
         private List<Point> points = new List<Point>();
+        Bitmap bmp;
+        Graphics g;
     }
 }
